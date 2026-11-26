@@ -1,0 +1,7 @@
+# Built by the setup scripts
+*.exe
+*.app/
+# Per-user files
+settings.ini
+error.log
+.DS_Store
