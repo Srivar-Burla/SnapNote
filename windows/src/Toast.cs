@@ -72,9 +72,13 @@ namespace SnapNote
             g.Clear(Theme.Surface);
             g.SmoothingMode = SmoothingMode.AntiAlias;
             using (Pen p = new Pen(Theme.Line)) g.DrawRectangle(p, 0, 0, Width - 1, Height - 1);
-            float d = Ui.S(6);
-            using (SolidBrush b = new SolidBrush(error ? Theme.Danger : Theme.Success))
-                g.FillEllipse(b, Ui.S(18), Ui.S(16) + (Ui.S(20) - d) / 2f, d, d);
+            if (error)
+            {
+                float d = Ui.S(6);
+                using (SolidBrush b = new SolidBrush(Theme.Danger))
+                    g.FillEllipse(b, Ui.S(18), Ui.S(16) + (Ui.S(20) - d) / 2f, d, d);
+            }
+            else Logo.Draw(g, new RectangleF(Ui.S(12), Ui.S(16), Ui.S(18), Ui.S(18)), 1f, false, Theme.Dark);
             TextRenderer.DrawText(g, title, Ui.Medium(14), new Point(Ui.S(36), Ui.S(16)), Theme.Ink, Theme.Surface, Ui.TextFlags);
             TextRenderer.DrawText(g, body ?? "", Ui.Sans(13), bodyRect, Theme.InkMuted, Theme.Surface, TextFormatFlags.WordBreak | TextFormatFlags.NoPrefix);
         }

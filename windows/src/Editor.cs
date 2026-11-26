@@ -173,7 +173,7 @@ namespace SnapNote
         {
             int cy = (top.Height - Ui.S(28)) / 2;
             string brand = "SnapNote";
-            int x = Ui.S(16) + TextRenderer.MeasureText(brand, Ui.Medium(15), Size.Empty, Ui.TextFlags).Width
+            int x = Ui.S(16 + 24 + 8) + TextRenderer.MeasureText(brand, Ui.Medium(15), Size.Empty, Ui.TextFlags).Width
                 + Ui.S(8) + TextRenderer.MeasureText("v" + Program.Version, Ui.Mono(11), Size.Empty, Ui.TextFlags).Width + Ui.S(24);
             chipRect.Location = new Point(x, cy); x += chipRect.Width + Ui.S(4);
             chipArrow.Location = new Point(x, cy); x += chipArrow.Width + Ui.S(14);
@@ -195,9 +195,13 @@ namespace SnapNote
             string brand = "SnapNote";
             Size b = TextRenderer.MeasureText(brand, Ui.Medium(15), Size.Empty, Ui.TextFlags);
             int y = (top.Height - b.Height) / 2;
-            TextRenderer.DrawText(g, brand, Ui.Medium(15), new Point(Ui.S(16), y), Theme.Ink, Theme.Surface, Ui.TextFlags);
+            // The SnapNote logo, then the name and version
+            int lz = Ui.S(24);
+            Logo.Draw(g, new RectangleF(Ui.S(16), (top.Height - lz) / 2f, lz, lz), 1f, false, Theme.Dark);
+            int bx = Ui.S(16 + 24 + 8);
+            TextRenderer.DrawText(g, brand, Ui.Medium(15), new Point(bx, y), Theme.Ink, Theme.Surface, Ui.TextFlags);
             Size v = TextRenderer.MeasureText("v" + Program.Version, Ui.Mono(11), Size.Empty, Ui.TextFlags);
-            TextRenderer.DrawText(g, "v" + Program.Version, Ui.Mono(11), new Point(Ui.S(16) + b.Width + Ui.S(8), y + b.Height - v.Height - 1), Theme.InkMuted, Theme.Surface, Ui.TextFlags);
+            TextRenderer.DrawText(g, "v" + Program.Version, Ui.Mono(11), new Point(bx + b.Width + Ui.S(8), y + b.Height - v.Height - 1), Theme.InkMuted, Theme.Surface, Ui.TextFlags);
             using (Pen p = new Pen(Theme.Line))
             {
                 g.DrawLine(p, 0, top.Height - 1, top.Width, top.Height - 1);

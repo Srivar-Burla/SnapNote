@@ -73,6 +73,35 @@ func drawCG(_ img: CGImage, in r: CGRect) {
             hints: [NSImageRep.HintKey.interpolation: NSNumber(value: NSImageInterpolation.high.rawValue)])
 }
 
+// The SnapNote logo (same drawing as AppIcon.icns): ink tile, light crop marks, red note bubble.
+// Draws into a flipped context at rect r.
+func drawLogo(_ r: CGRect, ring: Bool) {
+    guard let ctx = NSGraphicsContext.current?.cgContext else { return }
+    ctx.saveGState()
+    ctx.translateBy(x: r.minX, y: r.minY)
+    let k = r.width / 32
+    ctx.scaleBy(x: k, y: k)
+    let tile = NSBezierPath(roundedRect: CGRect(x: 1, y: 1, width: 30, height: 30), xRadius: 7, yRadius: 7)
+    rgb("#0b0b0c").setFill(); tile.fill()
+    if ring { NSColor(white: 1, alpha: 0.35).setStroke(); tile.lineWidth = 1.2 / k; tile.stroke() }
+    let m = NSBezierPath()
+    let a: CGFloat = 7, z: CGFloat = 25, L: CGFloat = 6
+    m.move(to: CGPoint(x: a, y: a + L)); m.line(to: CGPoint(x: a, y: a)); m.line(to: CGPoint(x: a + L, y: a))
+    m.move(to: CGPoint(x: z - L, y: a)); m.line(to: CGPoint(x: z, y: a)); m.line(to: CGPoint(x: z, y: a + L))
+    m.move(to: CGPoint(x: a, y: z - L)); m.line(to: CGPoint(x: a, y: z)); m.line(to: CGPoint(x: a + L, y: z))
+    m.lineWidth = max(2.2, 1.3 / k); m.lineCapStyle = .round; m.lineJoinStyle = .round
+    rgb("#f2f2f3").setStroke(); m.stroke()
+    let bub = NSBezierPath(roundedRect: CGRect(x: 15, y: 15.5, width: 12, height: 9), xRadius: 2.5, yRadius: 2.5)
+    bub.move(to: CGPoint(x: 17.5, y: 24)); bub.line(to: CGPoint(x: 22, y: 24)); bub.line(to: CGPoint(x: 17.5, y: 28)); bub.close()
+    rgb("#e5484d").setFill(); bub.fill()
+    let w = NSBezierPath()
+    w.move(to: CGPoint(x: 18, y: 19)); w.line(to: CGPoint(x: 24, y: 19))
+    w.move(to: CGPoint(x: 18, y: 21.6)); w.line(to: CGPoint(x: 22, y: 21.6))
+    w.lineWidth = max(1.4, 1 / k); w.lineCapStyle = .round
+    NSColor.white.setStroke(); w.stroke()
+    ctx.restoreGState()
+}
+
 func rtrim(_ s: String) -> String {
     var t = s
     while t.hasSuffix(" ") { t.removeLast() }
@@ -362,11 +391,12 @@ final class ToastView: NSView {
         let p = NSBezierPath(roundedRect: r, xRadius: 10, yRadius: 10)
         Theme.surface.setFill(); p.fill()
         Theme.line.setStroke(); p.lineWidth = 1; p.stroke()
-        var x: CGFloat = 16
+        let x: CGFloat = 38
         if isError {
             Theme.danger.setFill()
-            NSBezierPath(ovalIn: CGRect(x: 16, y: 20, width: 8, height: 8)).fill()
-            x = 32
+            NSBezierPath(ovalIn: CGRect(x: 18, y: 20, width: 8, height: 8)).fill()
+        } else {
+            drawLogo(CGRect(x: 12, y: 14, width: 20, height: 20), ring: Theme.dark)
         }
         drawText(title, at: CGPoint(x: x, y: 14), font: Fonts.sans(13, medium: true), color: Theme.ink)
         let attrs: [NSAttributedString.Key: Any] = [.font: Fonts.sans(12), .foregroundColor: Theme.inkMuted]
@@ -382,7 +412,7 @@ enum Toast {
     static func show(_ title: String, _ body: String, ms: Int = 4500, error: Bool = false) {
         Toast.panel?.orderOut(nil)
         let w: CGFloat = 340
-        let bodyH = (body as NSString).boundingRect(with: NSSize(width: w - 48, height: 1000), options: [.usesLineFragmentOrigin],
+        let bodyH = (body as NSString).boundingRect(with: NSSize(width: w - 54, height: 1000), options: [.usesLineFragmentOrigin],
                                                     attributes: [.font: Fonts.sans(12)], context: nil).height
         let h = 36 + ceil(bodyH) + 16
         guard let scr = NSScreen.main else { return }
@@ -1680,10 +1710,12 @@ final class TopBar: NSView {
         let bf = Fonts.sans(15, medium: true)
         let bs = textSize("SnapNote", bf)
         let y = (bounds.height - bs.height) / 2
-        drawText("SnapNote", at: CGPoint(x: 16, y: y), font: bf, color: Theme.ink)
+        drawLogo(CGRect(x: 16, y: (bounds.height - 24) / 2, width: 24, height: 24), ring: Theme.dark)
+        let bx: CGFloat = 16 + 24 + 8
+        drawText("SnapNote", at: CGPoint(x: bx, y: y), font: bf, color: Theme.ink)
         let vf = Fonts.mono(11)
         let vs = textSize("v" + appVersion, vf)
-        drawText("v" + appVersion, at: CGPoint(x: 16 + bs.width + 8, y: y + bs.height - vs.height - 1), font: vf, color: Theme.inkMuted)
+        drawText("v" + appVersion, at: CGPoint(x: bx + bs.width + 8, y: y + bs.height - vs.height - 1), font: vf, color: Theme.inkMuted)
         Theme.line.setFill()
         CGRect(x: 0, y: bounds.height - 1, width: bounds.width, height: 1).fill()
         CGRect(x: sepX, y: 16, width: 1, height: bounds.height - 32).fill()
@@ -1855,7 +1887,7 @@ final class Editor: NSObject, NSWindowDelegate {
         canvas.frame = CGRect(x: 0, y: 48, width: W, height: max(10, H - 200))
 
         let cy: CGFloat = 10
-        var x = 16 + textSize("SnapNote", Fonts.sans(15, medium: true)).width + 8 + textSize("v" + appVersion, Fonts.mono(11)).width + 24
+        var x = 16 + 24 + 8 + textSize("SnapNote", Fonts.sans(15, medium: true)).width + 8 + textSize("v" + appVersion, Fonts.mono(11)).width + 24
         chipRect.frame = CGRect(x: x, y: cy, width: chipRect.preferredWidth, height: 28); x += chipRect.frame.width + 4
         chipArrow.frame = CGRect(x: x, y: cy, width: chipArrow.preferredWidth, height: 28); x += chipArrow.frame.width + 14
         top.sepX = x - 7

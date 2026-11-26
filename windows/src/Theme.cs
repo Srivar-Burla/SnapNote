@@ -173,3 +173,48 @@ namespace SnapNote
         }
     }
 }
+
+namespace SnapNote
+{
+    // The SnapNote logo (same drawing as src\SnapNote.ico): ink tile, light crop marks, red note bubble.
+    // bubble scales the note for the waiting pulse; tick swaps its lines for a check mark.
+    static class Logo
+    {
+        public static void Draw(System.Drawing.Graphics g, System.Drawing.RectangleF r, float bubble, bool tick, bool ring)
+        {
+            System.Drawing.Drawing2D.GraphicsState st = g.Save();
+            g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+            g.TranslateTransform(r.X, r.Y);
+            float k = r.Width / 32f;
+            g.ScaleTransform(k, k);
+            using (System.Drawing.Drawing2D.GraphicsPath t = Ui.Round(new System.Drawing.RectangleF(1, 1, 30, 30), 7))
+            {
+                using (System.Drawing.SolidBrush b = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(11, 11, 12))) g.FillPath(b, t);
+                if (ring) using (System.Drawing.Pen p = new System.Drawing.Pen(System.Drawing.Color.FromArgb(90, 255, 255, 255), 1.2f / k)) g.DrawPath(p, t);
+            }
+            using (System.Drawing.Pen p = new System.Drawing.Pen(System.Drawing.Color.FromArgb(242, 242, 243), Math.Max(2.2f, 1.3f / k)))
+            {
+                p.StartCap = System.Drawing.Drawing2D.LineCap.Round; p.EndCap = System.Drawing.Drawing2D.LineCap.Round; p.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                float a = 7, z = 25, L = 6;
+                g.DrawLines(p, new System.Drawing.PointF[] { new System.Drawing.PointF(a, a + L), new System.Drawing.PointF(a, a), new System.Drawing.PointF(a + L, a) });
+                g.DrawLines(p, new System.Drawing.PointF[] { new System.Drawing.PointF(z - L, a), new System.Drawing.PointF(z, a), new System.Drawing.PointF(z, a + L) });
+                g.DrawLines(p, new System.Drawing.PointF[] { new System.Drawing.PointF(a, z - L), new System.Drawing.PointF(a, z), new System.Drawing.PointF(a + L, z) });
+            }
+            g.TranslateTransform(21, 20);
+            g.ScaleTransform(bubble, bubble);
+            g.TranslateTransform(-21, -20);
+            using (System.Drawing.SolidBrush red = new System.Drawing.SolidBrush(System.Drawing.Color.FromArgb(229, 72, 77)))
+            {
+                using (System.Drawing.Drawing2D.GraphicsPath bp = Ui.Round(new System.Drawing.RectangleF(15, 15.5f, 12, 9), 2.5f)) g.FillPath(red, bp);
+                g.FillPolygon(red, new System.Drawing.PointF[] { new System.Drawing.PointF(17.5f, 24), new System.Drawing.PointF(22, 24), new System.Drawing.PointF(17.5f, 28) });
+            }
+            using (System.Drawing.Pen w = new System.Drawing.Pen(System.Drawing.Color.White, Math.Max(1.4f, 1f / k)))
+            {
+                w.StartCap = System.Drawing.Drawing2D.LineCap.Round; w.EndCap = System.Drawing.Drawing2D.LineCap.Round; w.LineJoin = System.Drawing.Drawing2D.LineJoin.Round;
+                if (tick) g.DrawLines(w, new System.Drawing.PointF[] { new System.Drawing.PointF(18, 20.2f), new System.Drawing.PointF(20.2f, 22.2f), new System.Drawing.PointF(24.4f, 17.8f) });
+                else { g.DrawLine(w, 18, 19, 24, 19); g.DrawLine(w, 18, 21.6f, 22, 21.6f); }
+            }
+            g.Restore(st);
+        }
+    }
+}

@@ -306,7 +306,21 @@ namespace SnapNote
         // Crop marks with a small chat bubble in the corner.
         static Icon Make(int sz, Color c) { return Make(sz, c, 1f, false); }
 
+        // Tray and fallback icons: the SnapNote logo itself.
         static Icon Make(int sz, Color c, float bubble, bool tick)
+        {
+            using (Bitmap lb = new Bitmap(sz, sz))
+            {
+                using (Graphics g = Graphics.FromImage(lb)) Logo.Draw(g, new RectangleF(0, 0, sz, sz), bubble, tick, Theme.TaskbarDark());
+                IntPtr hl = lb.GetHicon();
+                Icon li = (Icon)Icon.FromHandle(hl).Clone();
+                Native.DestroyIcon(hl);
+                return li;
+            }
+        }
+
+        // The earlier line-only glyph, kept for reference.
+        static Icon MakeGlyph(int sz, Color c, float bubble, bool tick)
         {
             using (Bitmap b = new Bitmap(sz, sz))
             {

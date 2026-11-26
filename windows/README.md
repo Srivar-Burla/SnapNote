@@ -6,7 +6,7 @@ Take a screenshot, highlight the spots you care about, write a comment on each o
 
 ## Use it
 
-1. Start it: double-click **Run SnapNote.bat**. It sits in the system tray (crop-marks icon with a red bubble).
+1. Start it: double-click **Run SnapNote.bat** the first time (it builds SnapNote.exe), then **SnapNote.exe**, which carries the SnapNote logo. It sits in the system tray as the logo: a black tile with crop marks and a red note bubble.
 2. Press **Win+Shift+C** (or left-click the tray icon). The screen freezes.
    - **Drag** to select an area, **click** to grab the window under the cursor, **Enter** for the whole screen, **Esc** to cancel.
 3. In the editor:
