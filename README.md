@@ -32,3 +32,7 @@ mac/       main.swift, Set up SnapNote.command, AppIcon.icns, README.md
 ```
 
 Built files (`SnapNote.exe`, `SnapNote.app`) and the per-user `settings.ini` are not in the repository; the setup scripts make them.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
