@@ -8,7 +8,7 @@ Take a screenshot, highlight the spots you care about, write a comment on each o
 
 ## What you need first
 
-1. **macOS 11 (Big Sur) or newer.** Apple silicon or Intel.
+1. **macOS 12.3 (Monterey) or newer.** Apple silicon or Intel. On macOS 14 (Sonoma) and newer SnapNote captures the screen with Apple’s ScreenCaptureKit.
 2. **Apple's Command Line Tools** (free, from Apple). If they are missing, setup opens Apple's installer for you. Run setup again when that finishes. You do not need the full Xcode.
 
 Nothing else is downloaded. No Python, no Homebrew.
@@ -74,6 +74,7 @@ The hotkey is **Control+Shift+S** because ⌘⇧3, 4 and 5 belong to the Mac's o
 
 - **"cannot be opened because it is from an unidentified developer":** right-click the file, choose **Open**, then **Open**. Or allow it in **System Settings > Privacy & Security**.
 - **Setup says the build failed:** copy the red messages from Terminal and send them to Claude. This version hasn't been built on a Mac yet, so a small fix may be needed.
+- **The captured screen is black:** macOS isn't letting SnapNote see the screen, usually because SnapNote was rebuilt after you allowed it (macOS treats the rebuilt app as a new one). In **System Settings > Privacy & Security > Screen & System Audio Recording**, select SnapNote and remove it with the **minus** button, add **SnapNote.app** again with **plus** and turn it on, then quit SnapNote from the menu bar and open it again. Running setup again also clears the old entry, so macOS asks afresh. `snapnote.log` in this folder records each capture (method, size and brightness), which helps if it still fails.
 - **The capture shows only your wallpaper, or a "Could not capture" message:** Screen Recording isn't allowed yet. See step 4 above, then quit and reopen SnapNote.
 - **Pressing ⌘V pastes only the image:** allow SnapNote under **Accessibility** (step 5), or raise `SmartPasteDelayMs` in settings.ini (try 700).
 - **After running setup again, permissions stop working:** rebuilding makes a new app as far as macOS is concerned. Remove SnapNote from Screen Recording and Accessibility, add it again, and reopen it.

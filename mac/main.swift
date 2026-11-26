@@ -7,6 +7,7 @@ import Carbon
 import CoreImage
 import ImageIO
 import ApplicationServices
+import ScreenCaptureKit
 
 let appVersion = "0.2"
 let tagline = "Snap it, mark it, share it with AI or save it."
@@ -2226,6 +2227,92 @@ final class OverlayView: NSView {
     }
 }
 
+// MARK: - Log (snapnote.log next to SnapNote.app), for diagnosing problems on a Mac
+
+enum Log {
+    static var url: URL? = nil
+    static func write(_ line: String) {
+        guard let u = url else { return }
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        let text = f.string(from: Date()) + "  " + line + "\n"
+        if let h = try? FileHandle(forWritingTo: u) {
+            h.seekToEndOfFile()
+            h.write(text.data(using: .utf8)!)
+            h.closeFile()
+        } else {
+            try? text.write(to: u, atomically: true, encoding: .utf8)
+        }
+    }
+}
+
+// MARK: - Screen capture
+
+enum Capture {
+    // ScreenCaptureKit on macOS 14 and newer (Apple's current way); the screencapture tool before that.
+    static func grab(_ screen: NSScreen, _ done: @escaping (CGImage?, String) -> Void) {
+        let did = (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value ?? CGMainDisplayID()
+        if #available(macOS 14.0, *) {
+            SCShareableContent.getExcludingDesktopWindows(false, onScreenWindowsOnly: true) { content, error in
+                guard let content = content, let display = content.displays.first(where: { $0.displayID == did }) ?? content.displays.first else {
+                    let why = error?.localizedDescription ?? "no display"
+                    DispatchQueue.main.async { Log.write("ScreenCaptureKit: " + why); Capture.grabTool(screen, done) }
+                    return
+                }
+                let me = content.applications.filter { $0.processID == ProcessInfo.processInfo.processIdentifier }
+                let filter = SCContentFilter(display: display, excludingApplications: me, exceptingWindows: [])
+                let cfg = SCStreamConfiguration()
+                let scale = screen.backingScaleFactor
+                cfg.width = Int(CGFloat(display.width) * scale)
+                cfg.height = Int(CGFloat(display.height) * scale)
+                cfg.showsCursor = false
+                SCScreenshotManager.captureImage(contentFilter: filter, configuration: cfg) { img, err in
+                    DispatchQueue.main.async {
+                        if let im = img { done(im, "ScreenCaptureKit") }
+                        else { Log.write("ScreenCaptureKit capture: " + (err?.localizedDescription ?? "no image")); Capture.grabTool(screen, done) }
+                    }
+                }
+            }
+        } else {
+            grabTool(screen, done)
+        }
+    }
+
+    static func grabTool(_ screen: NSScreen, _ done: @escaping (CGImage?, String) -> Void) {
+        let idx = (NSScreen.screens.firstIndex(of: screen) ?? 0) + 1
+        let path = NSTemporaryDirectory() + "snapnote-\(UUID().uuidString).png"
+        DispatchQueue.global(qos: .userInitiated).async {
+            let p = Process()
+            p.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+            p.arguments = ["-x", "-D\(idx)", path]
+            do { try p.run(); p.waitUntilExit() } catch {}
+            var img: CGImage? = nil
+            if let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil) {
+                img = CGImageSourceCreateImageAtIndex(src, 0, nil)
+            }
+            try? FileManager.default.removeItem(atPath: path)
+            DispatchQueue.main.async { done(img, "screencapture") }
+        }
+    }
+
+    // Average and brightest value (0-255) of a small copy of the image.
+    static func brightness(_ img: CGImage) -> (avg: Double, max: Double) {
+        let w = 32, h = 18
+        var px = [UInt8](repeating: 0, count: w * h * 4)
+        guard let ctx = CGContext(data: &px, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w * 4,
+                                  space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue) else { return (255, 255) }
+        ctx.interpolationQuality = .medium
+        ctx.draw(img, in: CGRect(x: 0, y: 0, width: w, height: h))
+        var sum = 0.0, top = 0.0
+        for i in 0..<(w * h) {
+            let v = (Double(px[i * 4]) + Double(px[i * 4 + 1]) + Double(px[i * 4 + 2])) / 3
+            sum += v
+            top = Swift.max(top, v)
+        }
+        return (sum / Double(w * h), top)
+    }
+}
+
 // MARK: - App: menu bar icon, hotkey, capture
 
 final class AppController: NSObject, NSApplicationDelegate {
@@ -2247,6 +2334,8 @@ final class AppController: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         settings = Settings(url: folder.appendingPathComponent("settings.ini"))
+        Log.url = folder.appendingPathComponent("snapnote.log")
+        Log.write("SnapNote \(appVersion) started on macOS \(ProcessInfo.processInfo.operatingSystemVersionString); screen recording allowed: \(CGPreflightScreenCaptureAccess())")
         Theme.load(settings.theme)
         buildMainMenu()
         NSApp.setActivationPolicy(.accessory)
@@ -2445,28 +2534,25 @@ final class AppController: NSObject, NSApplicationDelegate {
         capturing = true
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens[0]
-        let idx = (NSScreen.screens.firstIndex(of: screen) ?? 0) + 1
         let wins = AppController.windowRects(screen)
-        let path = NSTemporaryDirectory() + "snapnote-\(UUID().uuidString).png"
-        DispatchQueue.global(qos: .userInitiated).async {
-            let p = Process()
-            p.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            p.arguments = ["-x", "-D\(idx)", path]
-            do { try p.run(); p.waitUntilExit() } catch {}
-            var img: CGImage? = nil
-            if let src = CGImageSourceCreateWithURL(URL(fileURLWithPath: path) as CFURL, nil) {
-                img = CGImageSourceCreateImageAtIndex(src, 0, nil)
+        Capture.grab(screen) { [weak self] img, how in
+            guard let s = self else { return }
+            s.capturing = false
+            guard let shot = img else {
+                Log.write("capture failed (" + how + ")")
+                Toast.show("Could not capture the screen", "Check Screen Recording permission for SnapNote in System Settings > Privacy & Security, then quit and reopen SnapNote.", ms: 12000, error: true)
+                return
             }
-            try? FileManager.default.removeItem(atPath: path)
-            DispatchQueue.main.async { [weak self] in
-                guard let s = self else { return }
-                s.capturing = false
-                guard let shot = img else {
-                    Toast.show("Could not capture the screen", "Check Screen Recording permission for SnapNote in System Settings.", error: true)
-                    return
-                }
-                s.showOverlay(shot, screen, wins)
+            let lum = Capture.brightness(shot)
+            Log.write("capture via \(how): \(shot.width)x\(shot.height), \(shot.bitsPerComponent) bits, brightness \(String(format: "%.1f", lum.avg))/\(String(format: "%.1f", lum.max))")
+            if lum.max < 3 {
+                // macOS hands back an all-black picture when Screen Recording isn't really allowed
+                Toast.show("The screen came back black",
+                           "macOS isn't letting SnapNote see the screen yet. In System Settings > Privacy & Security > Screen & System Audio Recording, remove SnapNote with the minus button, add SnapNote.app again with plus, then quit and reopen SnapNote.",
+                           ms: 16000, error: true)
+                return
             }
+            s.showOverlay(shot, screen, wins)
         }
     }
 
@@ -2499,6 +2585,8 @@ final class AppController: NSObject, NSApplicationDelegate {
         let px = CGRect(x: round(sel.minX * sc), y: round(sel.minY * sc), width: round(sel.width * sc), height: round(sel.height * sc))
             .intersection(CGRect(x: 0, y: 0, width: shot.width, height: shot.height))
         guard !px.isNull, let crop = shot.cropping(to: px) else { return }
+        let lum = Capture.brightness(crop)
+        Log.write("editor opened: \(crop.width)x\(crop.height) at scale \(sc), brightness \(String(format: "%.1f", lum.avg))")
         let ed = Editor(image: crop, scale: sc, screen: screen, settings: settings)
         ed.onClose = { [weak self] in
             self?.editor = nil

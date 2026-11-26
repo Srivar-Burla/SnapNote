@@ -34,9 +34,9 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources" || fail "Could not create SnapNote.app here."
 
 echo "Building SnapNote.app for $ARCH (about 30 seconds) ..."
-xcrun swiftc -O -swift-version 5 -target "$ARCH-apple-macos11.0" \
+xcrun swiftc -O -swift-version 5 -target "$ARCH-apple-macos12.3" \
   -o "$APP/Contents/MacOS/SnapNote" main.swift \
-  -framework AppKit -framework Carbon -framework CoreImage -framework ApplicationServices \
+  -framework AppKit -framework Carbon -framework CoreImage -framework ApplicationServices -framework ScreenCaptureKit \
   || fail "The build failed. Send the messages above to Claude."
 
 cp AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
@@ -53,7 +53,7 @@ cat > "$APP/Contents/Info.plist" <<'PLIST'
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleExecutable</key><string>SnapNote</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
-  <key>LSMinimumSystemVersion</key><string>11.0</string>
+  <key>LSMinimumSystemVersion</key><string>12.3</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
 </dict>
@@ -62,6 +62,10 @@ PLIST
 
 # Sign it for this Mac only, so macOS remembers the Screen Recording and Accessibility permissions.
 codesign --force --sign - --identifier local.linework.snapnote "$APP" >/dev/null 2>&1 || echo "(Signing skipped; the app still runs.)"
+# A rebuilt app counts as a new app to macOS, so an old Screen Recording or Accessibility entry for SnapNote
+# no longer matches it (that shows up as a black capture). Clear SnapNote's own entries so macOS asks afresh.
+tccutil reset ScreenCapture local.linework.snapnote >/dev/null 2>&1
+tccutil reset Accessibility local.linework.snapnote >/dev/null 2>&1
 # Files from a downloaded zip are quarantined; clear that for this folder only.
 xattr -dr com.apple.quarantine "$DIR" 2>/dev/null
 touch "$APP"
