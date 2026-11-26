@@ -4,7 +4,7 @@
 
 Take a screenshot, highlight the spots you care about, write a comment on each one, then paste it all into any AI chat (Claude, ChatGPT, Gemini…) with a single ⌘V, or save it as a note. SnapNote lives in the menu bar. Everything stays on your Mac.
 
-> **Not yet tested on a Mac.** This is a native Mac version of the Windows app, written and checked on Windows. It has not been built on a Mac yet. If setup or the app misbehaves, the checklist at the end says what to look at. Send what you see to Claude and it will be fixed.
+> **Tested on a Mac** (November 2026): setup, capture, marking up, copy and save work. If something misbehaves on your Mac, the checklist at the end says what to look at, and `snapnote.log` in this folder records each capture.
 
 ## What you need first
 

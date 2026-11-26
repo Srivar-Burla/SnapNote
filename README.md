@@ -20,7 +20,7 @@ Small hairline animations (the marks draw themselves in, a paper plane on copy, 
 | Built with | C# WinForms, compiled by `setup.bat` with the C# compiler that ships with Windows | Swift and AppKit, compiled by `Set up SnapNote.command` with Apple's Command Line Tools |
 | Lives in | the system tray | the menu bar |
 | Hotkey | Win+Shift+C | Control+Shift+S |
-| Status | tested on Windows 11 | builds on a Mac; capture fix in testing |
+| Status | tested on Windows 11 | tested on a Mac |
 
 Nothing is downloaded or installed beyond the compiler each system already has (or Apple's free Command Line Tools on a Mac). Each folder's README has setup steps.
 

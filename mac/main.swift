@@ -1,6 +1,6 @@
 // SnapNote for macOS: snap it, mark it, share it with AI or save it.
 // One-file AppKit app. "Set up SnapNote.command" builds it into SnapNote.app with Apple's swiftc.
-// Port of the Windows version (C# WinForms). Written on Windows and not yet compiled on a Mac.
+// Port of the Windows version (C# WinForms).
 
 import AppKit
 import Carbon

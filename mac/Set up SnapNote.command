@@ -4,8 +4,7 @@
 #  Builds SnapNote.app in this folder from main.swift, using Apple's
 #  own Swift compiler (Xcode Command Line Tools). Nothing else is
 #  downloaded or installed.
-#  NOTE: written on Windows and NOT yet tested on a Mac. If a step
-#  fails, see "If something goes wrong" in README.md.
+#  If a step fails, see "If something goes wrong" in README.md.
 # ---------------------------------------------------------------
 cd "$(dirname "$0")" || exit 1
 DIR="$(pwd)"
