@@ -1780,6 +1780,8 @@ final class Editor: NSObject, NSWindowDelegate {
         window.backgroundColor = Theme.surface
         window.appearance = NSAppearance(named: Theme.dark ? .darkAqua : .aqua)
         window.minSize = NSSize(width: 760, height: 420)
+        // Open on the Space you're on, including over a full-screen app, so macOS never switches desktops.
+        window.collectionBehavior = [.moveToActiveSpace, .fullScreenAuxiliary]
 
         canvas.img = image
         canvas.penColor = settings.annotationColor
@@ -2593,9 +2595,16 @@ final class AppController: NSObject, NSApplicationDelegate {
             NSApp.setActivationPolicy(.accessory)   // back to living in the menu bar only
         }
         editor = ed
-        NSApp.setActivationPolicy(.regular)          // show in the Dock while the editor is open, like Screenshot
+        // Show the editor on the current Space first, then join the Dock. Becoming a Dock app before the
+        // window exists made macOS switch to another desktop (like Control+Left) on some setups.
         NSApp.activate(ignoringOtherApps: true)
         ed.show()
+        DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150)) { [weak self] in
+            guard let s = self, s.editor === ed else { return }
+            NSApp.setActivationPolicy(.regular)      // show in the Dock while the editor is open
+            NSApp.activate(ignoringOtherApps: true)
+            ed.window.makeKeyAndOrderFront(nil)
+        }
     }
 }
 
