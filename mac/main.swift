@@ -123,6 +123,7 @@ final class Settings {
     var saveFolder = ""
     var alsoSaveOnCopy = false
     var animations = true
+    var showInDock = false
 
     static let defaultText = """
 # SnapNote settings. After editing: menu bar icon > Quit SnapNote, then open SnapNote.app again.
@@ -157,6 +158,10 @@ SaveFolder=
 # true = also save a copy there every time you copy for chat.
 AlsoSaveOnCopy=false
 
+# true = SnapNote also shows in the Dock while the editor is open. Off by default: on some Macs
+# turning into a Dock app makes macOS switch to another desktop.
+ShowInDock=false
+
 # Little line-drawing animations (paper plane, tray, drawn-in marks, waiting bubble). false = off.
 # They are also off when "Reduce motion" is on in System Settings > Accessibility > Display.
 Animations=true
@@ -190,6 +195,7 @@ Animations=true
             case "savefolder": saveFolder = v
             case "alsosaveoncopy": alsoSaveOnCopy = Settings.bool(v, false)
             case "animations": animations = Settings.bool(v, true)
+            case "showindock": showInDock = Settings.bool(v, false)
             default: break
             }
         }
@@ -2577,6 +2583,7 @@ final class AppController: NSObject, NSApplicationDelegate {
         }
         w.contentView = v
         overlay = w
+        Log.write("overlay shown")
         NSApp.activate(ignoringOtherApps: true)
         w.makeKeyAndOrderFront(nil)
         w.makeFirstResponder(v)
@@ -2592,18 +2599,22 @@ final class AppController: NSObject, NSApplicationDelegate {
         let ed = Editor(image: crop, scale: sc, screen: screen, settings: settings)
         ed.onClose = { [weak self] in
             self?.editor = nil
-            NSApp.setActivationPolicy(.accessory)   // back to living in the menu bar only
+            if NSApp.activationPolicy() != .accessory { NSApp.setActivationPolicy(.accessory) }   // back to the menu bar only
         }
         editor = ed
-        // Show the editor on the current Space first, then join the Dock. Becoming a Dock app before the
-        // window exists made macOS switch to another desktop (like Control+Left) on some setups.
+        // SnapNote stays a menu bar app while the editor is open: becoming a Dock app made macOS switch
+        // to another desktop (like Control+Left) on Srivar's Mac. ShowInDock=true brings the Dock icon back.
         NSApp.activate(ignoringOtherApps: true)
         ed.show()
+        Log.write("editor shown; on this desktop: \(ed.window.isOnActiveSpace)")
         DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(150)) { [weak self] in
             guard let s = self, s.editor === ed else { return }
-            NSApp.setActivationPolicy(.regular)      // show in the Dock while the editor is open
-            NSApp.activate(ignoringOtherApps: true)
-            ed.window.makeKeyAndOrderFront(nil)
+            if s.settings.showInDock {
+                NSApp.setActivationPolicy(.regular)
+                NSApp.activate(ignoringOtherApps: true)
+                ed.window.makeKeyAndOrderFront(nil)
+            }
+            Log.write("editor after 150 ms; on this desktop: \(ed.window.isOnActiveSpace), Dock: \(s.settings.showInDock)")
         }
     }
 }

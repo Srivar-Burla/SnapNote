@@ -27,7 +27,7 @@ Leave SnapNote.app inside the SnapNote folder, because its `settings.ini` sits n
 
 1. Press **⌃⇧S** (Control+Shift+S), or click the menu bar icon and choose **Capture**. The screen freezes.
    - **Drag** to select an area, **click** to grab the window under the pointer, **Return** for the whole screen, **Esc** to cancel.
-2. In the editor (it shows in the Dock while it's open):
+2. In the editor (it opens on the desktop you're on; SnapNote stays in the menu bar, not the Dock):
    - Drag on the image to draw a **Highlight**. A frosted comment bubble pops up next to it, numbered to match. Type your comment. **Return** finishes it, and **Shift+Return** adds a line.
    - **Arrow** draws an arrow, and it gets its own numbered bubble at its tail. Click an arrow to show its three round nodes. Pull the **middle** node to curve the whole arrow one way, or node **1 or 3** to give it a double bend. Pulled nodes turn solid, and clicking one without dragging lets it go back.
    - Click a bubble (or inside a highlight) to edit it, drag a bubble to move it, and click its **×** to remove that mark. The dots pick the colour (ink, blue, red). **⌘Z** undoes the last mark.
@@ -72,6 +72,8 @@ The hotkey is **Control+Shift+S** because ⌘⇧3, 4 and 5 belong to the Mac's o
 
 ## If something goes wrong
 
+- **macOS switches to another desktop when the editor opens:** send `snapnote.log` from this folder to Claude. It notes whether the editor opened on your current desktop. `ShowInDock=false` in settings.ini (the default) keeps SnapNote out of the Dock, which avoids the usual cause.
+
 - **"cannot be opened because it is from an unidentified developer":** right-click the file, choose **Open**, then **Open**. Or allow it in **System Settings > Privacy & Security**.
 - **Setup says the build failed:** copy the red messages from Terminal and send them to Claude. This version hasn't been built on a Mac yet, so a small fix may be needed.
 - **The captured screen is black:** macOS isn't letting SnapNote see the screen, usually because SnapNote was rebuilt after you allowed it (macOS treats the rebuilt app as a new one). In **System Settings > Privacy & Security > Screen & System Audio Recording**, select SnapNote and remove it with the **minus** button, add **SnapNote.app** again with **plus** and turn it on, then quit SnapNote from the menu bar and open it again. Running setup again also clears the old entry, so macOS asks afresh. `snapnote.log` in this folder records each capture (method, size and brightness), which helps if it still fails.
@@ -82,9 +84,9 @@ The hotkey is **Control+Shift+S** because ⌘⇧3, 4 and 5 belong to the Mac's o
 ## What to check on your Mac (first run)
 
 1. Setup finishes without a red `[!]` line, and **SnapNote.app** appears in the folder with the SnapNote icon (black tile, crop marks, red note bubble).
-2. A crop-marks icon appears in the menu bar, and a card at the top right says "SnapNote is running". There is no Dock icon yet.
+2. A crop-marks icon appears in the menu bar, and a card at the top right says "SnapNote is running". There is no Dock icon.
 3. After allowing Screen Recording and reopening, **⌃⇧S** freezes the screen with a dark tint and a hint pill at the top. Dragging shows an ink outline with square handles and a pixel size. Hovering over a window outlines it.
-4. Releasing opens the editor at the image's actual size, and SnapNote shows in the Dock while it's open. The top bar shows Highlight, Arrow, three colour dots, Undo and the tagline.
+4. Releasing opens the editor at the image's actual size, on the same desktop: macOS does not switch desktops. The top bar shows Highlight, Arrow, three colour dots, Undo and the tagline.
 5. Drawing a highlight dims the rest of the image slightly and pops up a frosted, see-through bubble with a pointer and the number 1. Typing goes into the bubble.
 6. Drawing an arrow gives it bubble 2. Clicking the arrow shows three nodes. Dragging the middle node curves the arrow, and dragging an end node makes an S-shape.
 7. **⌘Return**, then **⌘V** in a chat box: the picture pastes, and a moment later the numbered text pastes (after allowing Accessibility).
